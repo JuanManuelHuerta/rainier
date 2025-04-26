@@ -34,12 +34,10 @@ def main():
 	basic_note =Note(44100,110,0.2,-5,500)
 
 	sine_wavetable =Wavetable(np.sin,64,None)
-
+	
 	basic_motif = Motif(240,4,4,44100,None)
 	#basic_motif._replace(wav_motif=np.zeros((int(basic_motif.num_compassess*basic_motif.bpm*60*basic_motif.sample_rate),)))
 	
-
-
 	working_wave_table=np.zeros((sine_wavetable.wavetable_len,))
 	for n in range(sine_wavetable.wavetable_len):
 		working_wave_table[n]=sine_wavetable.waveform(2*np.pi* n /sine_wavetable.wavetable_len)
