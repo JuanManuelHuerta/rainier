@@ -31,11 +31,12 @@ Motif = namedtuple('Motif','bpm beats_per_compass num_compassess sample_rate wav
 
 def main():
 	
-	basic_note =Note(44100,110,0.2,-5,500)
-
+	basic_note =Note(44100,110,0.1,-5,500)
+	basic_note2 =Note(44100,220,0.1,-5,500)
 	sine_wavetable =Wavetable(np.sin,64,None)
-	
-	basic_motif = Motif(240,4,4,44100,None)
+	sine_wavetable2 =Wavetable(np.sin,64,None)
+	basic_motif = Motif(300,4,4,44100,None)
+
 	#basic_motif._replace(wav_motif=np.zeros((int(basic_motif.num_compassess*basic_motif.bpm*60*basic_motif.sample_rate),)))
 	
 	working_wave_table=np.zeros((sine_wavetable.wavetable_len,))
@@ -54,11 +55,31 @@ def main():
 	sine_wavetable._replace(wave_table=output)
 
 
+	working_wave_table2=np.zeros((sine_wavetable2.wavetable_len,))
+	for n in range(sine_wavetable2.wavetable_len):
+		working_wave_table2[n]=sine_wavetable2.waveform(2*np.pi* n /sine_wavetable2.wavetable_len)
+	output2 = np.zeros((int(basic_note2.t*basic_note2.sample_rate),))
+	index = 0
+	index_increment = basic_note2.f * sine_wavetable2.wavetable_len  / basic_note2.sample_rate
+	for n in range(output2.shape[0]):
+		output2[n]=interpolate_linearly(working_wave_table2,index)
+		index += index_increment
+		index %= sine_wavetable2.wavetable_len
+	amplitude = 32767*10**(basic_note.gain/20)
+	output2 *= amplitude
+	output2 = fade_in_out(output2,fade_length=basic_note.fade_length)
+	sine_wavetable2._replace(wave_table=output2)
+
 	working_motif_wave = np.zeros(int(basic_motif.num_compassess*basic_motif.beats_per_compass*60.0*basic_motif.sample_rate/(basic_motif.bpm)))
 	samples_per_beat = basic_motif.sample_rate*60/basic_motif.bpm
 	l = output.shape[0]
+	l2 = output2.shape[0]
 	for n in range(basic_motif.beats_per_compass*basic_motif.num_compassess):
-		working_motif_wave[int(samples_per_beat*n):int(samples_per_beat*n)+l]=np.add(working_motif_wave[int(samples_per_beat*n):int(samples_per_beat*n)+l], output)
+		if n%2==0:
+			working_motif_wave[int(samples_per_beat*n):int(samples_per_beat*n)+l]=np.add(working_motif_wave[int(samples_per_beat*n):int(samples_per_beat*n)+l], output)
+		else:
+			working_motif_wave[int(samples_per_beat*n):int(samples_per_beat*n)+l2]=np.add(working_motif_wave[int(samples_per_beat*n):int(samples_per_beat*n)+l2], output2)
+
 	basic_motif._replace(wav_motif=working_motif_wave.astype(np.int16))
 
 
